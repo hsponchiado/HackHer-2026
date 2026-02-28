@@ -283,7 +283,8 @@ function bindEvents() {
     if (result?.error === "NO_API_KEY") {
       setApiStatus("⚠️ No API key — save one first", "orange");
     } else if (Array.isArray(result) && result[0]?.maxScore !== undefined) {
-      setApiStatus(`✅ API working! Score: 97%`, "green");
+      const score = Math.round(result[0].maxScore * 100);
+      setApiStatus(`✅ API working! Test score: ${score}%`, "green");
     } else if (result?.[0]?.error) {
       setApiStatus(`❌ Error: ${result[0].error}`, "red");
     } else {
