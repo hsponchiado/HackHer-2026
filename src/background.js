@@ -4,6 +4,8 @@
  * statistics aggregation, and extension lifecycle.
  */
 
+import { Utils } from "./helpers.js";
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PERSPECTIVE_API_URL =
@@ -74,6 +76,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case "GET_STATS":
         sendResponse(await getStats());
+        break;
+
+      case "RECORD_SCANNED":
+        await recordScanned(message.payload.count || 0);
+        sendResponse({ success: true });
         break;
 
       case "RECORD_DETECTION":
@@ -232,6 +239,12 @@ async function clearStats() {
   chrome.action.setBadgeText({ text: "" });
 }
 
+async function recordScanned(count) {
+  const stats = await getStats();
+  stats.totalScanned = (stats.totalScanned || 0) + count;
+  await saveStats(stats);
+}
+
 // ─── Evidence Capture ─────────────────────────────────────────────────────────
 
 async function captureEvidence({ text, scores, url, timestamp }, tab) {
@@ -256,7 +269,13 @@ async function captureEvidence({ text, scores, url, timestamp }, tab) {
 
 async function getSettings() {
   const data = await chrome.storage.local.get(SETTINGS_KEY);
-  return { ...DEFAULT_SETTINGS, ...(data[SETTINGS_KEY] || {}) };
+  const stored = data[SETTINGS_KEY] || {};
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    // Deep-merge filters so new keys added to DEFAULT_SETTINGS always get their default value
+    filters: { ...DEFAULT_SETTINGS.filters, ...(stored.filters || {}) },
+  };
 }
 
 async function saveSettings(settings) {
