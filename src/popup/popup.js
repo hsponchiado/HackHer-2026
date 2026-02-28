@@ -6,7 +6,7 @@
 // ─── Filter Definitions ──────────────────────────────────────────────────────
 
 const FILTER_DEFS = [
-  { key: "toxicity",         label: "General Toxicity",    desc: "Rude, disrespectful language" },
+  { key: "toxicity",         label: "General Toxicity",   icon: "", desc: "Rude, disrespectful language" },
   { key: "severeToxicity",   label: "Severe Toxicity",     desc: "Extremely harsh content" },
   { key: "threat",           label: "Threats & Violence",  desc: "Threatening or violent language" },
   { key: "insult",           label: "Insults",             desc: "Personal attacks and put-downs" },
