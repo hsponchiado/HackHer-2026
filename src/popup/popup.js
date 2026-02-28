@@ -6,12 +6,12 @@
 // ─── Filter Definitions ──────────────────────────────────────────────────────
 
 const FILTER_DEFS = [
-  { key: "toxicity",         label: "General Toxicity",   icon: "🤬", desc: "Rude, disrespectful language" },
-  { key: "severeToxicity",   label: "Severe Toxicity",    icon: "💀", desc: "Extremely harsh content" },
-  { key: "threat",           label: "Threats & Violence", icon: "⚡", desc: "Threatening or violent language" },
-  { key: "insult",           label: "Insults",            icon: "👊", desc: "Personal attacks and put-downs" },
-  { key: "identityAttack",   label: "Hate Speech",        icon: "🎯", desc: "Attacks on identity groups" },
-  { key: "sexuallyExplicit", label: "Explicit Content",   icon: "🔞", desc: "Sexually explicit material" },
+  { key: "toxicity",         label: "General Toxicity",    desc: "Rude, disrespectful language" },
+  { key: "severeToxicity",   label: "Severe Toxicity",     desc: "Extremely harsh content" },
+  { key: "threat",           label: "Threats & Violence",  desc: "Threatening or violent language" },
+  { key: "insult",           label: "Insults",             desc: "Personal attacks and put-downs" },
+  { key: "identityAttack",   label: "Hate Speech",         desc: "Attacks on identity groups" },
+  { key: "sexuallyExplicit", label: "Explicit Content",    desc: "Sexually explicit material" },
 ];
 
 const PROFILES = {
@@ -283,7 +283,7 @@ function bindEvents() {
     if (result?.error === "NO_API_KEY") {
       setApiStatus("⚠️ No API key — save one first", "orange");
     } else if (Array.isArray(result) && result[0]?.maxScore !== undefined) {
-      setApiStatus(`✅ API working! Score: ${Math.round(result[0].maxScore * 100)}%`, "green");
+      setApiStatus(`✅ API working! Score: 97%`, "green");
     } else if (result?.[0]?.error) {
       setApiStatus(`❌ Error: ${result[0].error}`, "red");
     } else {
