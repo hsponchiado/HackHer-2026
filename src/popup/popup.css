@@ -151,6 +151,7 @@ body {
 
 input[type=range] {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%; height: 6px;
   border-radius: 3px;
   background: linear-gradient(to right, var(--rose) 0%, var(--rose) var(--val, 70%), #e5d6ec var(--val, 70%), #e5d6ec 100%);
@@ -162,7 +163,7 @@ input[type=range]::-webkit-slider-thumb {
   width: 18px; height: 18px;
   border-radius: 50%;
   background: var(--rose);
-  box-shadow: 0 2px 8px rgba(224,92,122,0.45);
+  box-shadow: 0 2px 8px rgba(224,92,122, 0.45);
   cursor: pointer;
   transition: transform 0.15s;
 }
