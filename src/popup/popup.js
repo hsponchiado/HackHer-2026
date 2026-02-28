@@ -7,16 +7,16 @@
 
 const FILTER_DEFS = [
   { key: "toxicity",         label: "General Toxicity",   icon: "", desc: "Rude, disrespectful language" },
-  { key: "severeToxicity",   label: "Severe Toxicity",     desc: "Extremely harsh content" },
-  { key: "threat",           label: "Threats & Violence",  desc: "Threatening or violent language" },
-  { key: "insult",           label: "Insults",             desc: "Personal attacks and put-downs" },
-  { key: "identityAttack",   label: "Hate Speech",         desc: "Attacks on identity groups" },
-  { key: "sexuallyExplicit", label: "Explicit Content",    desc: "Sexually explicit material" },
+  { key: "severeToxicity",   label: "Severe Toxicity",    icon: "", desc: "Extremely harsh content" },
+  { key: "threat",           label: "Threats & Violence", icon: "", desc: "Threatening or violent language" },
+  { key: "insult",           label: "Insults",            icon: "", desc: "Personal attacks and put-downs" },
+  { key: "identityAttack",   label: "Hate Speech",        icon: "", desc: "Attacks on identity groups" },
+  { key: "sexuallyExplicit", label: "Explicit Content",   icon: "", desc: "Sexually explicit material" },
 ];
 
 const PROFILES = {
-  gentle:   { threshold: 0.85, filters: { toxicity: true,  severeToxicity: true,  threat: true,  insult: false, identityAttack: true,  sexuallyExplicit: false } },
-  balanced: { threshold: 0.70, filters: { toxicity: true,  severeToxicity: true,  threat: true,  insult: true,  identityAttack: true,  sexuallyExplicit: false } },
+  gentle:   { threshold: 0.85, filters: { toxicity: false,  severeToxicity: true,  threat: true,  insult: false, identityAttack: false,  sexuallyExplicit: false } },
+  balanced: { threshold: 0.70, filters: { toxicity: false,  severeToxicity: true,  threat: true,  insult: false,  identityAttack: true,  sexuallyExplicit: true } },
   strict:   { threshold: 0.50, filters: { toxicity: true,  severeToxicity: true,  threat: true,  insult: true,  identityAttack: true,  sexuallyExplicit: true  } },
 };
 
