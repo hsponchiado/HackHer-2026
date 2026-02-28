@@ -4,288 +4,137 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SafeSpace AI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --rose:    #e05c7a;
-      --rose-lt: #fce8ee;
-      --rose-dk: #b03060;
-      --lavender: #c4aef5;
-      --sage:    #a8d5b5;
-      --bg:      #fdf6f9;
-      --surface: #ffffff;
-      --text:    #2d1f2e;
-      --muted:   #9a7fa0;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      width: 380px;
-      min-height: 520px;
-      overflow-x: hidden;
-    }
-
-    /* ─ Header ─ */
-    .header {
-      background: linear-gradient(135deg, #e05c7a 0%, #c44a8a 50%, #9b3fcc 100%);
-      padding: 20px 20px 16px;
-      position: relative;
-      overflow: hidden;
-    }
-    .header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
-    }
-    .header-inner { position: relative; z-index: 1; }
-
-    /* ─ Toggle ─ */
-    .toggle-track {
-      width: 48px; height: 26px;
-      background: rgba(255,255,255,0.25);
-      border-radius: 13px;
-      position: relative;
-      cursor: pointer;
-      transition: background 0.3s;
-      border: 1px solid rgba(255,255,255,0.3);
-      flex-shrink: 0;
-    }
-    .toggle-track.on { background: rgba(255,255,255,0.5); }
-    .toggle-thumb {
-      width: 20px; height: 20px;
-      background: #fff;
-      border-radius: 50%;
-      position: absolute;
-      top: 2px; left: 2px;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    .toggle-track.on .toggle-thumb { transform: translateX(22px); }
-
-    /* ─ Range Slider ─ */
-    input[type=range] {
-      -webkit-appearance: none;
-      width: 100%; height: 6px;
-      border-radius: 3px;
-      background: linear-gradient(to right, var(--rose) 0%, var(--rose) var(--val, 70%), #e5d6ec var(--val, 70%), #e5d6ec 100%);
-      outline: none; cursor: pointer;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      background: var(--rose);
-      box-shadow: 0 2px 8px rgba(224,92,122,0.45);
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
-
-    /* ─ Tabs ─ */
-    .tab-btn {
-      flex: 1; padding: 8px 4px;
-      font-size: 12px; font-weight: 500;
-      color: var(--muted);
-      background: none; border: none; cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .tab-btn.active {
-      color: var(--rose);
-      border-bottom-color: var(--rose);
-    }
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-
-    /* ─ Stat Card ─ */
-    .stat-card {
-      background: var(--surface);
-      border-radius: 14px;
-      padding: 14px 16px;
-      border: 1px solid #f0e4f0;
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(224,92,122,0.12); }
-
-    /* ─ Category Bar ─ */
-    .cat-bar-fill {
-      height: 6px; border-radius: 3px;
-      background: linear-gradient(90deg, var(--rose), var(--lavender));
-      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* ─ Checkbox ─ */
-    .filter-check input[type=checkbox] {
-      width: 16px; height: 16px;
-      accent-color: var(--rose);
-      cursor: pointer;
-    }
-
-    /* ─ Pill ─ */
-    .blur-pill {
-      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
-      border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
-      background: #f5eef8; color: var(--muted);
-    }
-    .blur-pill.active { background: var(--rose-lt); color: var(--rose-dk); border-color: var(--rose); }
-
-    /* ─ API Key Input ─ */
-    .api-input {
-      width: 100%; padding: 9px 12px;
-      border: 1.5px solid #ead9f0;
-      border-radius: 10px; font-family: monospace; font-size: 12px;
-      background: #fdf6f9; color: var(--text);
-      outline: none; transition: border-color 0.2s;
-    }
-    .api-input:focus { border-color: var(--rose); }
-
-    /* ─ Button ─ */
-    .btn-primary {
-      background: linear-gradient(135deg, var(--rose), var(--rose-dk));
-      color: #fff; border: none; border-radius: 10px;
-      padding: 9px 18px; font-weight: 600; font-size: 13px;
-      cursor: pointer; transition: opacity 0.2s, transform 0.15s;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
-    .btn-ghost {
-      background: transparent; color: var(--muted); border: 1.5px solid #e5d6ec;
-      border-radius: 10px; padding: 8px 16px; font-size: 12px; font-weight: 500;
-      cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
-    }
-    .btn-ghost:hover { border-color: var(--rose); color: var(--rose); }
-
-    /* ─ Evidence List ─ */
-    .evidence-item {
-      background: var(--surface); border: 1px solid #f0e4f0;
-      border-radius: 10px; padding: 10px 12px; font-size: 12px;
-    }
-    .evidence-item p { color: var(--text); margin-bottom: 4px; line-height: 1.4; }
-    .evidence-item small { color: var(--muted); }
-
-    /* ─ Scrollbar ─ */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #e0cce8; border-radius: 2px; }
-
-    /* ─ Animations ─ */
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fade-up { animation: fadeUp 0.35s ease forwards; }
-    @keyframes pulse-ring { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
-    .pulse { animation: pulse-ring 2.5s ease-in-out infinite; }
-  </style>
+  <!-- Local CSS — no CDN dependencies -->
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
 
   <!-- ── Header ─────────────────────────────────────────────────────────── -->
-  <div class="header">
+  <div class="header" role="banner">
     <div class="header-inner flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="relative">
-          <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center pulse">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center pulse"
+               style="background:rgba(255,255,255,0.2)" aria-hidden="true">
             <span style="font-size:20px">🛡️</span>
           </div>
         </div>
         <div>
-          <h1 style="font-family:'DM Serif Display',serif;font-size:18px;color:#fff;line-height:1.2">SafeSpace AI</h1>
-          <p id="status-label" style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px">Scanning active</p>
+          <h1 style="font-size:18px;color:#fff;font-weight:700;line-height:1.2">SafeSpace AI</h1>
+          <p id="status-label" style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px"
+             role="status" aria-live="polite">Scanning active</p>
         </div>
       </div>
       <!-- Master toggle -->
       <div class="flex items-center gap-2">
-        <span id="toggle-text" style="font-size:12px;color:rgba(255,255,255,0.8);font-weight:500">ON</span>
-        <div class="toggle-track on" id="master-toggle">
+        <span id="toggle-text" style="font-size:12px;color:rgba(255,255,255,0.8);font-weight:500"
+              aria-hidden="true">ON</span>
+        <div class="toggle-track on" id="master-toggle"
+             role="switch" aria-checked="true" aria-label="Enable protection" tabindex="0">
           <div class="toggle-thumb"></div>
         </div>
       </div>
     </div>
 
     <!-- Mini stat bar -->
-    <div class="header-inner flex gap-4 mt-4">
+    <div class="header-inner flex gap-4 mt-4" role="region" aria-label="Quick statistics">
       <div class="text-center">
-        <div id="hdr-blocked" style="font-size:22px;font-weight:700;color:#fff;line-height:1">0</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.65)">Blocked</div>
+        <div id="hdr-blocked" style="font-size:22px;font-weight:700;color:#fff;line-height:1"
+             aria-label="Items blocked">0</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.65)" aria-hidden="true">Blocked</div>
       </div>
-      <div style="width:1px;background:rgba(255,255,255,0.2)"></div>
+      <div style="width:1px;background:rgba(255,255,255,0.2)" role="separator"></div>
       <div class="text-center">
-        <div id="hdr-scanned" style="font-size:22px;font-weight:700;color:#fff;line-height:1">0</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.65)">Scanned</div>
+        <div id="hdr-scanned" style="font-size:22px;font-weight:700;color:#fff;line-height:1"
+             aria-label="Items scanned">0</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.65)" aria-hidden="true">Scanned</div>
       </div>
-      <div style="width:1px;background:rgba(255,255,255,0.2)"></div>
+      <div style="width:1px;background:rgba(255,255,255,0.2)" role="separator"></div>
       <div class="text-center">
-        <div id="hdr-sessions" style="font-size:22px;font-weight:700;color:#fff;line-height:1">0</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.65)">Sessions</div>
+        <div id="hdr-sessions" style="font-size:22px;font-weight:700;color:#fff;line-height:1"
+             aria-label="Sessions protected">0</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.65)" aria-hidden="true">Sessions</div>
       </div>
     </div>
   </div>
 
   <!-- ── Tabs ────────────────────────────────────────────────────────────── -->
-  <div style="background:#fff;border-bottom:1px solid #f0e4f0;padding:0 16px">
-    <div class="flex">
-      <button class="tab-btn active" data-tab="protect">🔒 Protect</button>
-      <button class="tab-btn" data-tab="stats">📊 Stats</button>
-      <button class="tab-btn" data-tab="filters">⚙️ Filters</button>
-      <button class="tab-btn" data-tab="evidence">📋 Evidence</button>
+  <div style="background:#fff;border-bottom:1px solid #f0e4f0;padding:0 16px"
+       role="navigation" aria-label="Panel sections">
+    <div class="flex" role="tablist">
+      <button class="tab-btn active" data-tab="protect"
+              role="tab" aria-selected="true" aria-controls="tab-protect" id="btn-protect">🔒 Protect</button>
+      <button class="tab-btn" data-tab="stats"
+              role="tab" aria-selected="false" aria-controls="tab-stats" id="btn-stats">📊 Stats</button>
+      <button class="tab-btn" data-tab="filters"
+              role="tab" aria-selected="false" aria-controls="tab-filters" id="btn-filters">⚙️ Filters</button>
+      <button class="tab-btn" data-tab="evidence"
+              role="tab" aria-selected="false" aria-controls="tab-evidence" id="btn-evidence">📋 Evidence</button>
     </div>
   </div>
 
-  <div style="padding:16px;overflow-y:auto;max-height:340px">
+  <div style="padding:16px;overflow-y:auto;max-height:340px" role="main">
 
     <!-- ── Tab: Protect ─────────────────────────────────────────────────── -->
-    <div class="tab-pane active animate-fade-up" id="tab-protect">
+    <div class="tab-pane active animate-fade-up" id="tab-protect"
+         role="tabpanel" aria-labelledby="btn-protect">
 
       <!-- Sensitivity -->
       <div class="stat-card mb-3">
         <div class="flex items-center justify-between mb-2">
           <div>
-            <p style="font-size:13px;font-weight:600;color:var(--text)">Detection Sensitivity</p>
-            <p style="font-size:11px;color:var(--muted)">Higher = stricter filtering</p>
+            <label for="sensitivity-slider"
+                   style="font-size:13px;font-weight:600;color:var(--text);display:block">
+              Detection Sensitivity
+            </label>
+            <p style="font-size:11px;color:var(--muted)" id="slider-desc">Higher = stricter filtering</p>
           </div>
-          <span id="threshold-display" style="font-size:18px;font-weight:700;color:var(--rose)">70%</span>
+          <span id="threshold-display" style="font-size:18px;font-weight:700;color:var(--rose)"
+                aria-live="polite">70%</span>
         </div>
-        <input type="range" id="sensitivity-slider" min="0" max="100" value="70" style="--val:70%" />
-        <div class="flex justify-between mt-1" style="font-size:10px;color:var(--muted)">
+        <input type="range" id="sensitivity-slider" min="0" max="100" value="70" style="--val:70%"
+               aria-describedby="slider-desc" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
+        <div class="flex justify-between mt-1" style="font-size:10px;color:var(--muted)" aria-hidden="true">
           <span>Lenient</span><span>Balanced</span><span>Strict</span>
         </div>
       </div>
 
       <!-- Blur strength -->
       <div class="stat-card mb-3">
-        <p style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">Blur Strength</p>
-        <div class="flex gap-2">
-          <button class="blur-pill" data-blur="light">Light</button>
-          <button class="blur-pill active" data-blur="medium">Medium</button>
-          <button class="blur-pill" data-blur="heavy">Heavy</button>
+        <p style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px" id="blur-label">Blur Strength</p>
+        <div class="flex gap-2" role="group" aria-labelledby="blur-label">
+          <button class="blur-pill" data-blur="light" aria-pressed="false">Light</button>
+          <button class="blur-pill active" data-blur="medium" aria-pressed="true">Medium</button>
+          <button class="blur-pill" data-blur="heavy" aria-pressed="false">Heavy</button>
         </div>
       </div>
 
-      <!-- Notifications & Evidence -->
+      <!-- Notifications & Evidence Mode -->
       <div class="stat-card mb-3">
         <div class="flex flex-col gap-3">
-          <label class="flex items-center justify-between cursor-pointer">
+          <div class="flex items-center justify-between">
             <div>
-              <p style="font-size:13px;font-weight:500">Notifications</p>
+              <p style="font-size:13px;font-weight:500" id="notif-label">Notifications</p>
               <p style="font-size:11px;color:var(--muted)">Alert when content is detected</p>
             </div>
-            <div class="toggle-track on" id="notif-toggle" style="background:rgba(224,92,122,0.3);border:1px solid rgba(224,92,122,0.4)">
+            <div class="toggle-track on" id="notif-toggle"
+                 role="switch" aria-checked="true" aria-labelledby="notif-label" tabindex="0"
+                 style="background:rgba(224,92,122,0.3);border:1px solid rgba(224,92,122,0.4)">
               <div class="toggle-thumb"></div>
             </div>
-          </label>
-          <div style="height:1px;background:#f0e4f0"></div>
-          <label class="flex items-center justify-between cursor-pointer">
+          </div>
+          <div style="height:1px;background:#f0e4f0" role="separator"></div>
+          <div class="flex items-center justify-between">
             <div>
-              <p style="font-size:13px;font-weight:500">Evidence Mode</p>
+              <p style="font-size:13px;font-weight:500" id="evidence-label">Evidence Mode</p>
               <p style="font-size:11px;color:var(--muted)">Capture button on flagged content</p>
             </div>
-            <div class="toggle-track" id="evidence-toggle" style="border:1px solid rgba(224,92,122,0.4)">
+            <div class="toggle-track" id="evidence-toggle"
+                 role="switch" aria-checked="false" aria-labelledby="evidence-label" tabindex="0"
+                 style="border:1px solid rgba(224,92,122,0.4)">
               <div class="toggle-thumb"></div>
             </div>
-          </label>
+          </div>
         </div>
       </div>
 
@@ -293,29 +142,36 @@
       <div class="stat-card">
         <div class="flex items-center justify-between mb-2">
           <div>
-            <p style="font-size:13px;font-weight:600">Perspective API Key</p>
+            <p style="font-size:13px;font-weight:600" id="apikey-label">Perspective API Key</p>
             <p style="font-size:11px;color:var(--muted)">Required for toxicity analysis</p>
           </div>
-          <a href="https://perspectiveapi.com/" target="_blank" style="font-size:11px;color:var(--rose);text-decoration:none">Get key →</a>
+          <a href="https://perspectiveapi.com/" target="_blank" rel="noopener noreferrer"
+             style="font-size:11px;color:var(--rose);text-decoration:none"
+             aria-label="Get Perspective API key (opens new tab)">Get key →</a>
         </div>
-        <input class="api-input" id="api-key-input" type="password" placeholder="AIza..." autocomplete="off" />
+        <input class="api-input" id="api-key-input" type="password" placeholder="AIza…"
+               autocomplete="off" aria-labelledby="apikey-label" aria-describedby="api-status" />
         <div class="flex gap-2 mt-2">
           <button class="btn-primary flex-1" id="save-api-key">Save Key</button>
           <button class="btn-ghost" id="test-api-key">Test</button>
         </div>
-        <p id="api-status" style="font-size:11px;margin-top:6px;min-height:16px"></p>
+        <p id="api-status" style="font-size:11px;margin-top:6px;min-height:16px"
+           role="status" aria-live="polite"></p>
       </div>
     </div>
 
     <!-- ── Tab: Stats ───────────────────────────────────────────────────── -->
-    <div class="tab-pane animate-fade-up" id="tab-stats">
+    <div class="tab-pane animate-fade-up" id="tab-stats"
+         role="tabpanel" aria-labelledby="btn-stats">
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div class="stat-card text-center">
-          <div id="stat-blocked-big" style="font-size:28px;font-weight:700;color:var(--rose);line-height:1">0</div>
+          <div id="stat-blocked-big" style="font-size:28px;font-weight:700;color:var(--rose);line-height:1"
+               aria-label="Total items blocked">0</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">Items Blocked</div>
         </div>
         <div class="stat-card text-center">
-          <div id="stat-sessions-big" style="font-size:28px;font-weight:700;color:#8a60e0;line-height:1">0</div>
+          <div id="stat-sessions-big" style="font-size:28px;font-weight:700;color:#8a60e0;line-height:1"
+               aria-label="Sessions protected">0</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">Sessions Protected</div>
         </div>
       </div>
@@ -323,7 +179,7 @@
       <!-- Category breakdown -->
       <div class="stat-card mb-3">
         <p style="font-size:13px;font-weight:600;margin-bottom:10px">By Category</p>
-        <div id="category-bars" class="flex flex-col gap-2">
+        <div id="category-bars" class="flex flex-col gap-2" role="list" aria-label="Detections by category">
           <p style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">No detections yet</p>
         </div>
       </div>
@@ -332,60 +188,81 @@
       <div class="stat-card">
         <div class="flex items-center justify-between mb-2">
           <p style="font-size:13px;font-weight:600">Recent Detections</p>
-          <button id="clear-stats-btn" class="btn-ghost" style="padding:4px 10px;font-size:11px">Clear</button>
+          <button id="clear-stats-btn" class="btn-ghost" style="padding:4px 10px;font-size:11px"
+                  aria-label="Clear all statistics">Clear</button>
         </div>
-        <div id="recent-events" class="flex flex-col gap-1">
+        <div id="recent-events" class="flex flex-col gap-1" role="list" aria-label="Recent detection events">
           <p style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">No events yet</p>
         </div>
       </div>
     </div>
 
     <!-- ── Tab: Filters ─────────────────────────────────────────────────── -->
-    <div class="tab-pane animate-fade-up" id="tab-filters">
+    <div class="tab-pane animate-fade-up" id="tab-filters"
+         role="tabpanel" aria-labelledby="btn-filters">
       <div class="stat-card mb-3">
-        <p style="font-size:13px;font-weight:600;margin-bottom:12px">Content Categories</p>
-        <div class="flex flex-col gap-3" id="filter-list">
-          <!-- Injected by JS -->
-        </div>
+        <p style="font-size:13px;font-weight:600;margin-bottom:12px" id="filter-group-label">Content Categories</p>
+        <fieldset style="border:none;padding:0" aria-labelledby="filter-group-label">
+          <div class="flex flex-col gap-3" id="filter-list">
+            <!-- Injected by JS -->
+          </div>
+        </fieldset>
       </div>
 
       <div class="stat-card">
-        <p style="font-size:13px;font-weight:600;margin-bottom:8px">Protection Profile</p>
-        <div class="flex flex-col gap-2">
-          <button class="btn-ghost w-full text-left" data-profile="gentle" style="justify-content:flex-start;display:flex;align-items:center;gap:8px">
-            <span>🌸</span><div><strong style="font-size:12px">Gentle</strong><br/><small style="color:var(--muted);font-size:11px">Blocks only the most severe content</small></div>
+        <p style="font-size:13px;font-weight:600;margin-bottom:8px" id="profile-group-label">Protection Profile</p>
+        <div class="flex flex-col gap-2" role="group" aria-labelledby="profile-group-label">
+          <button class="btn-ghost" data-profile="gentle"
+                  style="text-align:left;display:flex;align-items:center;gap:8px"
+                  aria-label="Gentle profile: blocks only the most severe content">
+            <span aria-hidden="true">🌸</span>
+            <div><strong style="font-size:12px">Gentle</strong><br/>
+            <small style="color:var(--muted);font-size:11px">Blocks only the most severe content</small></div>
           </button>
-          <button class="btn-ghost w-full text-left" data-profile="balanced" style="justify-content:flex-start;display:flex;align-items:center;gap:8px">
-            <span>⚖️</span><div><strong style="font-size:12px">Balanced</strong><br/><small style="color:var(--muted);font-size:11px">Recommended default settings</small></div>
+          <button class="btn-ghost" data-profile="balanced"
+                  style="text-align:left;display:flex;align-items:center;gap:8px"
+                  aria-label="Balanced profile: recommended default settings">
+            <span aria-hidden="true">⚖️</span>
+            <div><strong style="font-size:12px">Balanced</strong><br/>
+            <small style="color:var(--muted);font-size:11px">Recommended default settings</small></div>
           </button>
-          <button class="btn-ghost w-full text-left" data-profile="strict" style="justify-content:flex-start;display:flex;align-items:center;gap:8px">
-            <span>🔒</span><div><strong style="font-size:12px">Strict</strong><br/><small style="color:var(--muted);font-size:11px">Maximum protection, all categories</small></div>
+          <button class="btn-ghost" data-profile="strict"
+                  style="text-align:left;display:flex;align-items:center;gap:8px"
+                  aria-label="Strict profile: maximum protection, all categories">
+            <span aria-hidden="true">🔒</span>
+            <div><strong style="font-size:12px">Strict</strong><br/>
+            <small style="color:var(--muted);font-size:11px">Maximum protection, all categories</small></div>
           </button>
         </div>
       </div>
     </div>
 
     <!-- ── Tab: Evidence ────────────────────────────────────────────────── -->
-    <div class="tab-pane animate-fade-up" id="tab-evidence">
+    <div class="tab-pane animate-fade-up" id="tab-evidence"
+         role="tabpanel" aria-labelledby="btn-evidence">
       <div class="stat-card mb-3">
         <p style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px">
-          When <strong>Evidence Mode</strong> is enabled, you can capture flagged content for later reporting. 
-          Evidence is stored locally and never uploaded.
+          When <strong>Evidence Mode</strong> is enabled, you can capture flagged content for
+          reporting. Evidence is stored locally and never uploaded.
         </p>
-        <button id="export-evidence-btn" class="btn-primary w-full">📤 Export All Evidence</button>
+        <button id="export-evidence-btn" class="btn-primary" style="width:100%"
+                aria-label="Export all evidence as JSON file">📤 Export All Evidence</button>
       </div>
-      <div id="evidence-list" class="flex flex-col gap-2">
-        <p style="font-size:12px;color:var(--muted);text-align:center;padding:16px 0">No evidence captured yet</p>
+      <div id="evidence-list" class="flex flex-col gap-2" role="list" aria-label="Captured evidence items">
+        <p style="font-size:12px;color:var(--muted);text-align:center;padding:16px 0">
+          No evidence captured yet
+        </p>
       </div>
     </div>
 
   </div>
 
   <!-- ── Footer ──────────────────────────────────────────────────────────── -->
-  <div style="padding:10px 16px;background:#fff;border-top:1px solid #f0e4f0;display:flex;align-items:center;justify-content:space-between">
+  <footer style="padding:10px 16px;background:#fff;border-top:1px solid #f0e4f0;
+                 display:flex;align-items:center;justify-content:space-between">
     <span style="font-size:11px;color:var(--muted)">SafeSpace AI v1.0.0</span>
     <span style="font-size:11px;color:var(--muted)">🔒 Privacy-first</span>
-  </div>
+  </footer>
 
   <script src="popup.js"></script>
 </body>
