@@ -1,6 +1,8 @@
 /**
  * SafeSpace AI — Shared Utilities
- * Reusable helpers used across content and popup scripts.
+ * Used by background.js (imported as ES module via type:module service worker).
+ * Content scripts cannot use ES module imports directly, so these utilities
+ * are available here for background/popup and mirrored inline in content.js.
  */
 
 export const Utils = {
@@ -30,7 +32,7 @@ export const Utils = {
   },
 
   /**
-   * Chunk array into sub-arrays of size `n`.
+   * Chunk an array into sub-arrays of size `n`.
    */
   chunk(arr, n) {
     const result = [];
@@ -47,7 +49,7 @@ export const Utils = {
   },
 
   /**
-   * Truncate string with ellipsis.
+   * Truncate a string with ellipsis.
    */
   truncate(str, maxLen = 100) {
     if (!str || str.length <= maxLen) return str;
@@ -55,12 +57,12 @@ export const Utils = {
   },
 
   /**
-   * Format a timestamp as relative time.
+   * Format a timestamp as a relative time string.
    */
   timeAgo(timestamp) {
     const diff = Date.now() - timestamp;
-    if (diff < 60_000) return "just now";
-    if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+    if (diff < 60_000)     return "just now";
+    if (diff < 3_600_000)  return `${Math.round(diff / 60_000)}m ago`;
     if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
     return `${Math.round(diff / 86_400_000)}d ago`;
   },
@@ -73,7 +75,7 @@ export const Utils = {
   },
 
   /**
-   * Get hostname from a URL string.
+   * Get hostname safely from a URL string.
    */
   hostname(url) {
     try { return new URL(url).hostname; } catch { return "unknown"; }
