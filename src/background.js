@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS = {
   evidenceMode: false,
   notificationsEnabled: true,
   blurStrength: "medium",          // "light" | "medium" | "heavy"
+  parentalLock: false,
 };
 
 const STATS_KEY = "safespace_stats";
@@ -95,6 +96,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case "CAPTURE_EVIDENCE":
         await captureEvidence(message.payload, sender.tab);
+        sendResponse({ success: true });
+        break;
+
+      case "PARENTAL_SET_PIN":
+        sendResponse(await setParentalPin(message.payload.pin));
+        break;
+
+      case "PARENTAL_VERIFY_PIN":
+        sendResponse(await verifyParentalPin(message.payload.pin));
+        break;
+
+      case "PARENTAL_GET_STATUS":
+        sendResponse(await getParentalStatus());
+        break;
+
+      case "PARENTAL_CLEAR_PIN":
+        await clearParentalPin();
         sendResponse({ success: true });
         break;
 
@@ -263,6 +281,36 @@ async function captureEvidence({ text, scores, url, timestamp }, tab) {
   if (existing.length > 20) existing.pop(); // Keep last 20 captures
 
   await chrome.storage.local.set({ safespace_evidence: existing });
+}
+
+// ─── Parental Lock ────────────────────────────────────────────────────────────
+
+async function hashPin(pin) {
+  const data = new TextEncoder().encode("safespace_pin_v1:" + String(pin));
+  const buf  = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+async function setParentalPin(pin) {
+  await chrome.storage.local.set({
+    safespace_parental: { pinHash: await hashPin(pin), setAt: Date.now() },
+  });
+  return { success: true };
+}
+
+async function verifyParentalPin(pin) {
+  const { safespace_parental: p } = await chrome.storage.local.get("safespace_parental");
+  if (!p?.pinHash) return { success: false, error: "no_pin_set" };
+  return { success: (await hashPin(String(pin))) === p.pinHash };
+}
+
+async function getParentalStatus() {
+  const { safespace_parental: p } = await chrome.storage.local.get("safespace_parental");
+  return { hasPIN: !!(p?.pinHash) };
+}
+
+async function clearParentalPin() {
+  await chrome.storage.local.remove("safespace_parental");
 }
 
 // ─── Storage Helpers ──────────────────────────────────────────────────────────

@@ -70,6 +70,8 @@
               role="tab" aria-selected="false" aria-controls="tab-filters" id="btn-filters">⚙️ Filters</button>
       <button class="tab-btn" data-tab="evidence"
               role="tab" aria-selected="false" aria-controls="tab-evidence" id="btn-evidence">📋 Evidence</button>
+      <button class="tab-btn" data-tab="parents"
+              role="tab" aria-selected="false" aria-controls="tab-parents" id="btn-parents">👪 Parents</button>
     </div>
   </div>
 
@@ -253,6 +255,87 @@
           No evidence captured yet
         </p>
       </div>
+    </div>
+
+    <!-- ── Tab: Parents ─────────────────────────────────────────────────── -->
+    <div class="tab-pane animate-fade-up" id="tab-parents"
+         role="tabpanel" aria-labelledby="btn-parents">
+
+      <!-- Enable/Disable toggle -->
+      <div class="stat-card mb-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <p style="font-size:14px;font-weight:600;color:var(--text)" id="parental-label">🔐 Parent Lock</p>
+            <p style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5">
+              Children must enter a PIN to reveal any blurred content
+            </p>
+          </div>
+          <div class="toggle-track" id="parental-toggle"
+               role="switch" aria-checked="false" aria-labelledby="parental-label" tabindex="0"
+               style="background:rgba(224,92,122,0.25);border:1px solid rgba(224,92,122,0.3)">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- State: Lock ON + PIN already set ─────────────────────────────── -->
+      <div class="stat-card mb-3 hidden" id="parental-active-card">
+        <div class="flex items-center gap-3 mb-3">
+          <span style="font-size:28px">🔐</span>
+          <div>
+            <p style="font-size:13px;font-weight:700;color:#22a86a">Parent Lock is active</p>
+            <p style="font-size:11px;color:var(--muted);margin-top:2px">PIN is set and protecting your child</p>
+          </div>
+        </div>
+        <button id="change-pin-btn" class="btn-ghost" style="width:100%;margin-bottom:8px;text-align:center">
+          🔄 Change PIN
+        </button>
+        <button id="remove-pin-btn" class="btn-ghost"
+                style="width:100%;text-align:center;color:#e05c7a;border-color:#fce8ee">
+          🗑️ Remove PIN &amp; Disable Lock
+        </button>
+      </div>
+
+      <!-- State: Lock ON + no PIN set yet ─────────────────────────────── -->
+      <div class="stat-card mb-3 hidden" id="parental-setup-card">
+        <p style="font-size:13px;font-weight:600;margin-bottom:4px">Create a 4-digit PIN</p>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+          Pick a PIN only you know. Your child will need to enter it to reveal any hidden content.
+        </p>
+        <input id="pin-a" type="password" inputmode="numeric" maxlength="4"
+               placeholder="New PIN" autocomplete="off" class="api-input"
+               style="margin-bottom:8px;text-align:center;letter-spacing:8px;font-size:20px"
+               aria-label="New 4-digit PIN" />
+        <input id="pin-b" type="password" inputmode="numeric" maxlength="4"
+               placeholder="Confirm PIN" autocomplete="off" class="api-input"
+               style="margin-bottom:10px;text-align:center;letter-spacing:8px;font-size:20px"
+               aria-label="Confirm PIN" />
+        <p id="pin-setup-msg" style="font-size:11px;min-height:16px;margin-bottom:10px" aria-live="polite"></p>
+        <button id="save-pin-btn" class="btn-primary" style="width:100%">✅ Save PIN</button>
+      </div>
+
+      <!-- State: Change PIN form ──────────────────────────────────────── -->
+      <div class="stat-card mb-3 hidden" id="parental-change-card">
+        <p style="font-size:13px;font-weight:600;margin-bottom:14px">Change PIN</p>
+        <input id="pin-old" type="password" inputmode="numeric" maxlength="4"
+               placeholder="Current PIN" autocomplete="off" class="api-input"
+               style="margin-bottom:8px;text-align:center;letter-spacing:8px;font-size:20px"
+               aria-label="Current PIN" />
+        <input id="pin-new1" type="password" inputmode="numeric" maxlength="4"
+               placeholder="New PIN" autocomplete="off" class="api-input"
+               style="margin-bottom:8px;text-align:center;letter-spacing:8px;font-size:20px"
+               aria-label="New PIN" />
+        <input id="pin-new2" type="password" inputmode="numeric" maxlength="4"
+               placeholder="Confirm new PIN" autocomplete="off" class="api-input"
+               style="margin-bottom:10px;text-align:center;letter-spacing:8px;font-size:20px"
+               aria-label="Confirm new PIN" />
+        <p id="pin-change-msg" style="font-size:11px;min-height:16px;margin-bottom:10px" aria-live="polite"></p>
+        <div class="flex gap-2">
+          <button id="update-pin-btn" class="btn-primary flex-1">Update PIN</button>
+          <button id="cancel-change-btn" class="btn-ghost">Cancel</button>
+        </div>
+      </div>
+
     </div>
 
   </div>

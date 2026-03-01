@@ -19,6 +19,7 @@
     blurStrength: "medium",
     evidenceMode: false,
     notificationsEnabled: true,
+    parentalLock: false, 
   };
 
   // FIX: Use a regular Set (clearable) keyed by a stable node identifier
@@ -28,6 +29,13 @@
   const pendingQueue  = [];
   let debounceTimer   = null;
   let notificationCooldown = false;
+
+  // ─── Parental Lock State ──────────────────────────────────────────────────────
+  let pinDialog       = null;
+  let pinCallback     = null;
+  let pinCurrentInput = "";
+  let pinAttempts     = 0;
+  let pinLockoutEnd   = 0;
 
   // ─── Selectors: meaningful content containers ────────────────────────────────
   const CONTENT_SELECTORS = [
@@ -92,7 +100,6 @@
     const batch = pendingQueue.splice(0, 10);
     const texts = batch.map((item) => item.text);
 
-    // FIX: Report scanned count to background so stats are accurate
     sendMessage({ type: "RECORD_SCANNED", payload: { count: texts.length } });
 
     try {
@@ -195,8 +202,32 @@
     badgeText.className = "safespace-badge-text";
     badgeText.innerHTML = `<strong>${categoryLabel}</strong><small>${severityLabel} · ${Math.round(score * 100)}%</small>`;
 
+    // ── Inline PIN area (shown only when parental lock is on) ──────────────────
+    const pinArea = document.createElement("div");
+    pinArea.className = "safespace-pin-area";
+
+    const pinInput = document.createElement("input");
+    pinInput.className = "safespace-pin-input";
+    pinInput.type = "password";
+    pinInput.inputMode = "numeric";
+    pinInput.maxLength = 4;
+    pinInput.placeholder = "PIN";
+    pinInput.autocomplete = "off";
+    pinInput.setAttribute("aria-label", "Enter 4-digit parental PIN");
+
+    const pinError = document.createElement("span");
+    pinError.className = "safespace-pin-error";
+    pinError.setAttribute("aria-live", "polite");
+
+    pinArea.appendChild(pinInput);
+    pinArea.appendChild(pinError);
+
+    // Show/hide the PIN area based on current parental lock state
+    pinArea.style.display = settings.parentalLock ? "flex" : "none";
+
     badge.appendChild(badgeIcon);
     badge.appendChild(badgeText);
+    badge.appendChild(pinArea);
     badge.appendChild(revealBtn);
 
     // Inject into DOM
@@ -205,18 +236,75 @@
     blurLayer.appendChild(node);
     wrapper.appendChild(badge);
 
-    // Reveal interactions — both click on wrapper and explicit button
-    revealBtn.addEventListener("click", (e) => {
+    // Enforce digits-only in the PIN input
+    pinInput.addEventListener("input", () => {
+      pinInput.value = pinInput.value.replace(/\D/g, "").slice(0, 4);
+      pinError.textContent = "";
+    });
+
+    // Allow submitting PIN by pressing Enter in the input
+    pinInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        revealBtn.click();
+      }
+    });
+
+    // Prevent wrapper click from firing when interacting with the badge
+    badge.addEventListener("click", (e) => e.stopPropagation());
+
+    // Reveal button click
+    revealBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
+
+      if (settings.parentalLock && wrapper.dataset.revealed !== "true") {
+        // Validate inline PIN
+        const enteredPin = pinInput.value.trim();
+        if (enteredPin.length < 4) {
+          pinError.textContent = "Enter 4-digit PIN";
+          pinInput.focus();
+          return;
+        }
+        const result = await sendMessage({
+          type: "PARENTAL_VERIFY_PIN",
+          payload: { pin: enteredPin },
+        });
+        if (result?.success) {
+          pinInput.value = "";
+          pinError.textContent = "";
+          toggleReveal(wrapper, blurLayer, badge, revealBtn);
+        } else {
+          pinInput.value = "";
+          pinError.textContent = "Incorrect PIN";
+          pinInput.focus();
+          // Shake the input to give visual feedback
+          pinInput.classList.remove("safespace-pin-input--shake");
+          void pinInput.offsetWidth; // force reflow
+          pinInput.classList.add("safespace-pin-input--shake");
+          setTimeout(() => pinInput.classList.remove("safespace-pin-input--shake"), 500);
+        }
+        return;
+      }
+
+      // No parental lock (or toggling back to hidden)
       toggleReveal(wrapper, blurLayer, badge, revealBtn);
     });
 
-    // Clicking the blurred area also reveals
+    // Clicking the blurred area only works when parental lock is OFF
     wrapper.addEventListener("click", () => {
-      if (wrapper.dataset.revealed !== "true") {
+      if (wrapper.dataset.revealed !== "true" && !settings.parentalLock) {
         toggleReveal(wrapper, blurLayer, badge, revealBtn);
       }
     });
+
+    // Keep PIN area visibility in sync if settings change at runtime
+    wrapper._updatePinVisibility = () => {
+      pinArea.style.display = settings.parentalLock ? "flex" : "none";
+      if (!settings.parentalLock) {
+        pinInput.value = "";
+        pinError.textContent = "";
+      }
+    };
 
     // Evidence capture
     if (settings.evidenceMode) {
@@ -231,6 +319,205 @@
     badge.classList.toggle("safespace-badge--revealed", !isRevealed);
     revealBtn.textContent = isRevealed ? "Show" : "Hide";
     revealBtn.setAttribute("aria-expanded", String(!isRevealed));
+  }
+
+  // ─── Parental Lock — Reveal Gate ──────────────────────────────────────────────
+
+  /**
+   * Gate for the reveal action. If parental lock is on, show PIN dialog first.
+   * Otherwise reveal directly.
+   */
+  function handleRevealRequest(wrapper, blurLayer, badge, revealBtn) {
+    if (settings.parentalLock) {
+      showPinDialog((unlocked) => {
+        if (unlocked) toggleReveal(wrapper, blurLayer, badge, revealBtn);
+      });
+    } else {
+      toggleReveal(wrapper, blurLayer, badge, revealBtn);
+    }
+  }
+
+  // ─── PIN Dialog ───────────────────────────────────────────────────────────────
+
+  function buildPinDialog() {
+    const overlay = document.createElement("div");
+    overlay.id = "safespace-pin-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Parent PIN required");
+    overlay.setAttribute("aria-hidden", "true");
+
+    overlay.innerHTML = `
+      <div id="ss-pin-card">
+        <div id="ss-pin-icon">🔒</div>
+        <h2 id="ss-pin-title">Parent Lock</h2>
+        <p id="ss-pin-subtitle">Enter the parent PIN to reveal this content</p>
+        <div id="ss-pin-dots" aria-label="PIN digits entered" role="status">
+          <span class="ss-dot" data-index="0"></span>
+          <span class="ss-dot" data-index="1"></span>
+          <span class="ss-dot" data-index="2"></span>
+          <span class="ss-dot" data-index="3"></span>
+        </div>
+        <p id="ss-pin-error" aria-live="assertive"></p>
+        <div id="ss-pin-keypad" role="group" aria-label="PIN keypad">
+          ${[1,2,3,4,5,6,7,8,9].map((n) =>
+            `<button class="ss-key" data-key="${n}" type="button" aria-label="${n}">${n}</button>`
+          ).join("")}
+          <div class="ss-key-spacer"></div>
+          <button class="ss-key" data-key="0" type="button" aria-label="0">0</button>
+          <button class="ss-key ss-key-del" id="ss-key-del" type="button" aria-label="Delete last digit">⌫</button>
+        </div>
+        <button id="ss-pin-cancel" type="button">Cancel</button>
+      </div>
+    `;
+
+    // Number key clicks
+    overlay.querySelectorAll(".ss-key[data-key]").forEach((btn) => {
+      if (btn.id !== "ss-key-del") {
+        btn.addEventListener("click", () => handlePinKey(btn.dataset.key));
+      }
+    });
+    overlay.querySelector("#ss-key-del").addEventListener("click", () => handlePinKey("del"));
+    overlay.querySelector("#ss-pin-cancel").addEventListener("click", () => hidePinDialog(false));
+
+    // Click backdrop to cancel
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) hidePinDialog(false);
+    });
+
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function showPinDialog(callback) {
+    if (!pinDialog) pinDialog = buildPinDialog();
+
+    pinCallback     = callback;
+    pinCurrentInput = "";
+    updatePinDots();
+    setPinError("");
+
+    // If still in lockout period, show remaining time and disable keypad
+    if (Date.now() < pinLockoutEnd) {
+      disablePinKeypad(true);
+      startLockoutCountdown();
+    } else {
+      disablePinKeypad(false);
+    }
+
+    pinDialog.setAttribute("aria-hidden", "false");
+    pinDialog.style.display = "flex";
+    requestAnimationFrame(() => pinDialog.classList.add("ss-visible"));
+  }
+
+  function hidePinDialog(success) {
+    if (!pinDialog) return;
+    pinDialog.classList.remove("ss-visible");
+    setTimeout(() => {
+      if (pinDialog) {
+        pinDialog.style.display = "none";
+        pinDialog.setAttribute("aria-hidden", "true");
+      }
+    }, 300);
+    if (pinCallback) {
+      const cb = pinCallback;
+      pinCallback = null;
+      cb(!!success);
+    }
+  }
+
+  function handlePinKey(key) {
+    if (Date.now() < pinLockoutEnd) return;
+
+    if (key === "del") {
+      pinCurrentInput = pinCurrentInput.slice(0, -1);
+      updatePinDots();
+      return;
+    }
+
+    if (pinCurrentInput.length >= 4) return;
+    pinCurrentInput += key;
+    updatePinDots();
+
+    // Auto-submit when 4 digits are entered
+    if (pinCurrentInput.length === 4) {
+      setTimeout(submitPin, 150); // small delay so the last dot is visible
+    }
+  }
+
+  async function submitPin() {
+    const result = await sendMessage({
+      type: "PARENTAL_VERIFY_PIN",
+      payload: { pin: pinCurrentInput },
+    });
+
+    if (result?.success) {
+      // Correct — reset attempts and reveal
+      pinAttempts = 0;
+      pinLockoutEnd = 0;
+      hidePinDialog(true);
+    } else {
+      // Wrong PIN
+      pinAttempts++;
+      pinCurrentInput = "";
+      updatePinDots();
+      shakeDots();
+
+      if (pinAttempts >= 3) {
+        pinLockoutEnd = Date.now() + 30_000;
+        pinAttempts   = 0;
+        disablePinKeypad(true);
+        startLockoutCountdown();
+      } else {
+        const left = 3 - pinAttempts;
+        setPinError(`Incorrect PIN — ${left} attempt${left !== 1 ? "s" : ""} left`);
+      }
+    }
+  }
+
+  function updatePinDots() {
+    if (!pinDialog) return;
+    pinDialog.querySelectorAll(".ss-dot").forEach((dot, i) => {
+      dot.classList.toggle("ss-dot-filled", i < pinCurrentInput.length);
+    });
+  }
+
+  function setPinError(msg) {
+    if (!pinDialog) return;
+    const el = pinDialog.querySelector("#ss-pin-error");
+    el.textContent = msg;
+    el.style.opacity = msg ? "1" : "0";
+  }
+
+  function shakeDots() {
+    if (!pinDialog) return;
+    const dots = pinDialog.querySelector("#ss-pin-dots");
+    dots.classList.remove("ss-shake");
+    // Force reflow so the animation restarts if it's already running
+    void dots.offsetWidth;
+    dots.classList.add("ss-shake");
+    setTimeout(() => dots.classList.remove("ss-shake"), 500);
+  }
+
+  function disablePinKeypad(disabled) {
+    if (!pinDialog) return;
+    pinDialog.querySelectorAll(".ss-key").forEach((btn) => {
+      btn.disabled = disabled;
+    });
+  }
+
+  function startLockoutCountdown() {
+    const tick = () => {
+      const remaining = Math.ceil((pinLockoutEnd - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setPinError("");
+        disablePinKeypad(false);
+        return;
+      }
+      setPinError(`Too many attempts — try again in ${remaining}s`);
+      setTimeout(tick, 1000);
+    };
+    tick();
   }
 
   function addEvidenceButton(wrapper, text, scores) {
@@ -313,7 +600,14 @@
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === "SETTINGS_UPDATED") {
         settings = message.payload;
-        if (!settings.enabled) removeAllBlurs();
+        if (!settings.enabled) {
+          removeAllBlurs();
+        } else {
+          // Sync inline PIN area visibility on all existing blurred wrappers
+          document.querySelectorAll("[data-safespace='true']").forEach((w) => {
+            if (typeof w._updatePinVisibility === "function") w._updatePinVisibility();
+          });
+        }
       }
 
       // FIX: RESCAN_PAGE now properly clears processed markers
@@ -342,7 +636,7 @@
   function getSeverityLabel(score) {
     if (score >= 0.9)  return "Severe";
     if (score >= 0.75) return "High";
-    if (score >= 0.5)  return "Moderate";
+    if (score >= 0.3)  return "Moderate";
     return "Low";
   }
 
@@ -354,7 +648,7 @@
 
   function getSeverityIcon(score) {
     if (score >= 0.9)  return "🚨";
-    if (score >= 0.75) return "⚠️";
+    if (score >= 0.25) return "⚠️";
     return "🔔";
   }
 

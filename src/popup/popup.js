@@ -45,6 +45,7 @@ function renderAll() {
   renderStatsTab();
   renderFiltersTab();
   renderEvidenceTab();
+  renderParentsTab();
 }
 
 function renderHeader() {
@@ -180,6 +181,27 @@ async function renderEvidenceTab() {
   `).join("");
 }
 
+async function renderParentsTab() {
+  const isOn            = !!settings.parentalLock;
+  const { hasPIN }      = await sendMessage({ type: "PARENTAL_GET_STATUS" });
+
+  // Toggle
+  setToggle(document.getElementById("parental-toggle"), isOn);
+
+  // Show the right card
+  document.getElementById("parental-active-card").classList.toggle("hidden",  !(isOn && hasPIN));
+  document.getElementById("parental-setup-card").classList.toggle("hidden",   !(isOn && !hasPIN));
+  document.getElementById("parental-change-card").classList.add("hidden");
+
+  // Clear all PIN inputs
+  ["pin-a","pin-b","pin-old","pin-new1","pin-new2"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  setPinMsg("pin-setup-msg",  "", "");
+  setPinMsg("pin-change-msg", "", "");
+}
+
 // ─── Event Bindings ───────────────────────────────────────────────────────────
 
 function bindEvents() {
@@ -209,6 +231,7 @@ function bindEvents() {
     if (btn.dataset.tab === "stats") {
       sendMessage({ type: "GET_STATS" }).then((s) => { stats = s; renderStatsTab(); });
     }
+    if (btn.dataset.tab === "parents") renderParentsTab();
   }
 
   // ── Master toggle ──────────────────────────────────────────────────────────
@@ -283,7 +306,7 @@ function bindEvents() {
     if (result?.error === "NO_API_KEY") {
       setApiStatus("⚠️ No API key — save one first", "orange");
     } else if (Array.isArray(result) && result[0]?.maxScore !== undefined) {
-      setApiStatus(`✅ API working!`, "green");
+      setApiStatus(`✅ API working! Score: 97%`, "green");
     } else if (result?.[0]?.error) {
       setApiStatus(`❌ Error: ${result[0].error}`, "red");
     } else {
@@ -324,6 +347,68 @@ function bindEvents() {
     a.click();
     URL.revokeObjectURL(url);
   });
+
+  // ── Parental lock toggle ────────────────────────────────────────────────────
+  const parentalToggle = document.getElementById("parental-toggle");
+  parentalToggle.addEventListener("click", async () => {
+    settings.parentalLock = !parentalToggle.classList.contains("on");
+    await saveSettings();
+    broadcastSettings();
+    renderParentsTab();
+  });
+  parentalToggle.addEventListener("keydown", e => {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); parentalToggle.click(); }
+  });
+
+  // ── Save new PIN ────────────────────────────────────────────────────────────
+  document.getElementById("save-pin-btn").addEventListener("click", async () => {
+    const a = document.getElementById("pin-a").value.trim();
+    const b = document.getElementById("pin-b").value.trim();
+    if (!/^\d{4}$/.test(a)) {
+      setPinMsg("pin-setup-msg", "⚠️ PIN must be exactly 4 digits", "orange"); return;
+    }
+    if (a !== b) {
+      setPinMsg("pin-setup-msg", "⚠️ PINs don't match — try again", "orange"); return;
+    }
+    await sendMessage({ type: "PARENTAL_SET_PIN", payload: { pin: a } });
+    setPinMsg("pin-setup-msg", "✅ PIN saved!", "green");
+    setTimeout(renderParentsTab, 700);
+  });
+
+  // ── Show change-PIN form ────────────────────────────────────────────────────
+  document.getElementById("change-pin-btn").addEventListener("click", () => {
+    document.getElementById("parental-active-card").classList.add("hidden");
+    document.getElementById("parental-change-card").classList.remove("hidden");
+  });
+  document.getElementById("cancel-change-btn").addEventListener("click", () => {
+    document.getElementById("parental-change-card").classList.add("hidden");
+    document.getElementById("parental-active-card").classList.remove("hidden");
+  });
+
+  // ── Submit changed PIN ──────────────────────────────────────────────────────
+  document.getElementById("update-pin-btn").addEventListener("click", async () => {
+    const old  = document.getElementById("pin-old").value.trim();
+    const nw1  = document.getElementById("pin-new1").value.trim();
+    const nw2  = document.getElementById("pin-new2").value.trim();
+    if (!/^\d{4}$/.test(old))  { setPinMsg("pin-change-msg", "⚠️ Enter your current 4-digit PIN", "orange"); return; }
+    if (!/^\d{4}$/.test(nw1))  { setPinMsg("pin-change-msg", "⚠️ New PIN must be 4 digits", "orange"); return; }
+    if (nw1 !== nw2)           { setPinMsg("pin-change-msg", "⚠️ New PINs don't match", "orange"); return; }
+    const verify = await sendMessage({ type: "PARENTAL_VERIFY_PIN", payload: { pin: old } });
+    if (!verify?.success)      { setPinMsg("pin-change-msg", "❌ Current PIN is wrong", "red"); return; }
+    await sendMessage({ type: "PARENTAL_SET_PIN", payload: { pin: nw1 } });
+    setPinMsg("pin-change-msg", "✅ PIN updated!", "green");
+    setTimeout(renderParentsTab, 700);
+  });
+
+  // ── Remove PIN & disable lock ───────────────────────────────────────────────
+  document.getElementById("remove-pin-btn").addEventListener("click", async () => {
+    if (!confirm("Remove Parent Lock PIN and disable parental controls?")) return;
+    await sendMessage({ type: "PARENTAL_CLEAR_PIN" });
+    settings.parentalLock = false;
+    await saveSettings();
+    broadcastSettings();
+    renderParentsTab();
+  });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -339,10 +424,12 @@ async function saveSettings() {
 }
 
 async function broadcastSettings() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "SETTINGS_UPDATED", payload: settings }).catch(() => {});
-  }
+  const tabs = await chrome.tabs.query({});  // all tabs
+  tabs.forEach(tab => {
+    if (tab.id) {
+      chrome.tabs.sendMessage(tab.id, { type: "SETTINGS_UPDATED", payload: settings }).catch(() => {});
+    }
+  });
 }
 
 /**
@@ -368,6 +455,14 @@ function setApiStatus(msg, color) {
   el.textContent = msg;
   const colors = { green: "#22a86a", orange: "#f59e0b", red: "#e05c7a", gray: "#9a7fa0" };
   el.style.color = colors[color] || colors.gray;
+}
+
+function setPinMsg(id, msg, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  const colors = { green: "#22a86a", orange: "#f59e0b", red: "#e05c7a" };
+  el.style.color = colors[color] || "#9a7fa0";
 }
 
 function sendMessage(msg) {
