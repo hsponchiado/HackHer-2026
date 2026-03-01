@@ -94,7 +94,7 @@ Perspective API free tier: 1 QPS. The content script implements:
 
 ---
 
-## Hackathon Demo Tips
+## Demo Tips
 
 1. Test on **Twitter/X**, **Reddit**, **YouTube comments**, or **Discord**
 2. Enable **Evidence Mode** to showcase capture flow
