@@ -84,23 +84,6 @@ safespace-ai/
 
 ---
 
-## Development
-
-### Icons
-Generate icon PNGs at `icons/icon16.png`, `icon32.png`, `icon48.png`, `icon128.png`.  
-Use any 🛡️ shield icon at those dimensions.
-
-### Tailwind CSS
-The popup uses Tailwind CDN for rapid prototyping. For production, replace with a local build:
-```bash
-npx tailwindcss -i ./src/popup/input.css -o ./src/popup/tailwind.css --minify
-```
-
-### Adding New API Attributes
-In `background.js`, add to the `filterMap` object and add a corresponding filter definition in `popup.js`'s `FILTER_DEFS` array.
-
----
-
 ## Rate Limits
 
 Perspective API free tier: 1 QPS. The content script implements:
