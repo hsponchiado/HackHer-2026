@@ -51,15 +51,6 @@ safespace-ai/
 - Content scripts injected at `document_idle` on all URLs
 - Permissions: `storage`, `activeTab`, `scripting`, `notifications`
 
-### Message Flow
-```
-Content Script ──→ background.js ──→ Perspective API
-     ↑                  ↓
-     └──── results ─────┘
-     
-Popup ──→ background.js (settings/stats CRUD)
-```
-
 ### Content Script Logic
 1. **Initial Scan** — `querySelectorAll` on meaningful content selectors
 2. **MutationObserver** — monitors dynamically loaded content (infinite scroll, DMs)
