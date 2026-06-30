@@ -104,3 +104,4 @@ Perspective API free tier: 1 QPS. The content script implements:
 ---
 
 *Built with ❤️ for safety. Powered by [Perspective API](https://perspectiveapi.com/).*
+In collaboration with @SeaUgoEze and @Awwal-10
