@@ -1,5 +1,6 @@
 # HackHer-2026
 # SafeSpace — Chrome Extension
+#DEMO VIDEO: https://devpost.com/software/safespace-kopriy
 
 > Real-time AI powered protection from online harassment, abusive language, and threats.
 
